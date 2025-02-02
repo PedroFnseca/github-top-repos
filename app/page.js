@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -41,9 +42,18 @@ export default function Home() {
           Generate Image 🚀
         </button>
       </form>
-      <p className="info">
-        Share your image with friends and showcase your impact on GitHub!
-      </p>
+      <div className="info">
+        <p className="info">
+          Share your image with friends and showcase your impact on GitHub! by{" "}
+          <Link
+            href="https://github.com/PedroFnseca"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            @PedroFnseca
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
