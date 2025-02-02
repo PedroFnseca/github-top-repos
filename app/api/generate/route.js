@@ -3,7 +3,7 @@ import axios from "axios";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const { username, top, order, sort } = Object.fromEntries(searchParams);
+  const { username, top, order, sort, theme } = Object.fromEntries(searchParams);
 
   if (!username) {
     return new Response(JSON.stringify({ error: "Username is required" }), {
@@ -19,7 +19,7 @@ export async function GET(request) {
 
     const repos = formatData(response.data, { top, order, sort });
 
-    const imageBuffer = generateImage(repos);
+    const imageBuffer = generateImage(repos, { theme });
 
     return new Response(imageBuffer, {
       headers: { "Content-Type": "image/png" },
@@ -60,13 +60,43 @@ function formatData(repos, { top, order, sort }) {
   });
 }
 
-function generateImage(repos) {
+function getTheme(theme) {
+  const validThemes = ["dark", "light"];
+
+  if (!validThemes.includes(theme)) {
+    return getTheme("light");
+  }
+
+  const themes = {
+    dark: {
+      background: "#2f363d",
+      color: "#120625",
+      textColor: "#120625",
+      borderColor: "#444c56",
+    },
+    light: {
+      background: "#f6f8fa",
+      color: "#24292f",
+      textColor: "#24292f",
+      borderColor: "#d0d7de"
+    },
+  };
+
+  return themes[theme] || themes.light;
+}
+
+function generateImage(repos, { theme }) {
+  const cardSpacing = 120;
+  const cardHeight = 100;
+
   const width = 800;
-  const height = repos.length * 60 + 50;
+  const height = (repos.length * cardSpacing) + (cardHeight / 2);
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#ffffff";
+  const { background, color, textColor, borderColor } = getTheme(theme);
+
+  ctx.fillStyle = background;
   ctx.fillRect(0, 0, width, height);
 
   let yOffset = 30;
@@ -75,17 +105,27 @@ function generateImage(repos) {
     const stars = repo.stargazers_count;
     const description = repo.description || "No description provided";
 
-    ctx.fillStyle = "#f0f0f0";
-    ctx.fillRect(15, yOffset - 10, width - 30, 50);
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = borderColor; 
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(15, yOffset);
+    ctx.lineTo(width - 15, yOffset);
+    ctx.lineTo(width - 15, yOffset + cardHeight);
+    ctx.lineTo(15, yOffset + cardHeight);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
 
-    ctx.fillStyle = "#000000";
-    ctx.font = "bold 18px Arial";
-    ctx.fillText(`${name}`, 30, yOffset);
+    ctx.fillStyle = textColor;
+    ctx.font = "bold 20px Arial";
+    ctx.fillText(name, 30, yOffset + 30);
 
+    ctx.fillStyle = color;
     ctx.font = "14px Arial";
-    ctx.fillText(`⭐ ${stars} - ${description}`, 30, yOffset + 20);
+    ctx.fillText(`⭐ ${stars} - ${description}`, 30, yOffset + 60);
 
-    yOffset += 60;
+    yOffset += cardSpacing;
   });
 
   return canvas.toBuffer("image/png");
